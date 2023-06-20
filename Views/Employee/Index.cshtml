@@ -1,0 +1,120 @@
+﻿@model IEnumerable<Practical_14.EmployeeData>
+
+@{
+    ViewBag.Title = "Index";    
+}
+
+<h2>Index</h2>
+
+<p>
+    @Html.ActionLink("Create New", "Create")
+</p>
+<div class="d-flex">
+    <input class="form-control mr-2" type="search" placeholder="Search by Name" id="Search" aria-label="Search"> &nbsp;
+    <button class="btn btn-outline-success" id="SearchBtn">Search</button>
+</div>
+<br />
+
+<table class="table table-striped table-bordered">
+    <thead>
+        <tr>
+            <th>
+                @Html.DisplayNameFor(model => model.Name)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.DOB)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Age)
+            </th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody id="searching">
+        @foreach (var item in ViewData["Employees"] as List<EmployeeData>)
+        {            
+            <tr>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Name)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.DOB)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Age)
+                </td>
+                <td>
+                    @Html.ActionLink("Edit", "Edit", new { id = item.Id }, new { @class = "btn btn-outline-warning" }) &nbsp;
+                    @Html.ActionLink("Details", "Details", new { id = item.Id }, new { @class = "btn btn-outline-secondary" }) &nbsp;
+                    <button id="deleteBtn" class="btn btn-outline-danger" onclick="deleteData(@item.Id)">Delete</button>
+
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+<div>
+    Total Employee in this Page : @ViewData["TotalEmployee"]
+</div>
+
+<div class="pagination">
+    @foreach (var pageNumber in ViewData["PageNumbers"] as List<int>)
+    {
+        <a href="/Employee/Index?page=@pageNumber">Page @pageNumber </a>
+    }
+</div>
+
+@section Scripts {
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+    <script>
+
+        $("#SearchBtn").click(function () {
+            var SearchValue = $("#Search").val();
+            var Setdata = $("#searching");
+            Setdata.html("");
+
+            $.ajax({
+                type: "post",
+                url: "/Employee/SearchIndex?searchValue=" + SearchValue,
+                success: function (result) {
+                    if (result.length == 0) {
+                        Setdata.append('<tr><td>No record found!</td></tr>').css("background-color", "red")
+                    } else {
+                        $.each(result, function (index, value) {
+                            var timestamp = parseInt(value.DOB.match(/\d+/)[0]);
+                            var jsonDate = new Date(timestamp);
+                            var day = jsonDate.getDate().toString().padStart(2, '0');
+                            var month = (jsonDate.getMonth() + 1).toString().padStart(2, '0');
+                            var year = jsonDate.getFullYear().toString();
+                            var formattedDate = `${day}-${month}-${year}`;
+                            var Data = "<tr>" +
+                                    "<td>" + value.Name + "</td>" +
+                                    "<td>" + formattedDate + "</td>" +
+                                    "<td>" + value.Age + "</td>" +
+                                "<td>" + "<button class='btn btn-outline-warning' onclick='EditClicked(" + value.Id + ")'>Edit</button> &nbsp;" + 
+                                         "<button class='btn btn-outline-secondary' onclick='DetailsClicked(" + value.Id + ")'>Details</button> &nbsp;"  +
+                                             "<button class='btn btn-outline-danger' onclick='deleteData(" + value.Id + ")'>Delete</button>" +
+                                    "</td>" +
+                                "</tr>";
+                            Setdata.append(Data).css("background-color", "white");
+                        });
+                    }
+                }
+            })
+        })
+        function EditClicked(itemId) {
+            window.location.href = '@Url.Action("Edit", "Employee")' + '?id=' + itemId;
+        }
+        function DetailsClicked(itemId) {
+            window.location.href = '@Url.Action("Details", "Employee")' + '?id=' + itemId;
+        }
+        function deleteData(itemId) {
+            var result = window.confirm("Are you sure you want to delete this item?");
+            if (result) {
+                window.location.href = '@Url.Action("Delete", "Employee")' + '?id=' + itemId;
+            } else {
+                window.location.href = '@Url.Action("Index", "Employee")';
+            }
+        }
+    </script>
+}
